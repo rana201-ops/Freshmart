@@ -6,7 +6,7 @@ const { protect, isAdmin, isVendor } = require("../middleware/authMiddleware");
 const vendorApproved = require("../middleware/vendorApproved");
 const productCtrl = require("../controllers/product.controller");
 
-// ✅ multer error -> 400
+// multer error -> 400
 const uploadSingleImage = (req, res, next) => {
   upload.single("image")(req, res, (err) => {
     if (err) return res.status(400).json({ msg: err.message || "Image upload failed" });
@@ -35,6 +35,23 @@ router.post("/", protect, isVendor, vendorApproved, uploadSingleImage, productCt
 router.get("/pending", protect, isAdmin, productCtrl.getPendingProducts);
 router.get("/all", protect, isAdmin, productCtrl.getAllProductsAdmin);
 router.patch("/:id/status", protect, isAdmin, productCtrl.updateProductStatus);
+
+// ✅ SEARCH PRODUCTS (ADD HERE 🔥)
+router.get("/search", async (req, res) => {
+  try {
+    const query = req.query.q;
+
+    const Product = require("../models/Product"); // ensure model
+
+    const products = await Product.find({
+     name: { $regex: "^" + query, $options: "i" }
+    }).limit(10);
+
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ message: "Search error" });
+  }
+});
 
 // =====================================
 // ✅ PUBLIC: get single product details (KEEP LAST)

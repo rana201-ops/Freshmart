@@ -16,7 +16,10 @@ const Navbar = () => {
   const [openAcc, setOpenAcc] = useState(false);
   const [hoverKey, setHoverKey] = useState(null);
   const [q, setQ] = useState("");
+  const [results, setResults] = useState([]);
+const [showDropdown, setShowDropdown] = useState(false);
   const [scrolled, setScrolled] = useState(false); // ✅ NEW (UI only)
+  
 
   const dropdownRef = useRef(null);
   const accRef = useRef(null);
@@ -98,6 +101,23 @@ const isVendor = role === "vendor";
 
   const wishCount = useMemo(() => (wishlist || []).length, [wishlist]);
 
+  const handleSearchChange = async (e) => {
+  const value = e.target.value;
+  setQ(value);
+
+  if (value.trim().length > 0) {
+    try {
+      const res = await api.get(`/api/products/search?q=${value}`);
+      setResults(res.data);
+      setShowDropdown(true);
+    } catch (err) {
+      console.log(err);
+    }
+  } else {
+    setShowDropdown(false);
+  }
+};
+
   const onSearch = (e) => {
     e.preventDefault();
     const query = q.trim().replace(/\s+/g," ");
@@ -105,6 +125,8 @@ const isVendor = role === "vendor";
     navigate(`/search?q=${encodeURIComponent(query)}`);
     setQ("");
   };
+
+
 
   const Badge = ({ count, color = "bg-success" }) => {
     if (!count) return null;
@@ -240,35 +262,83 @@ const isVendor = role === "vendor";
           {/* CENTER SEARCH (desktop only) */}
           <div className="d-none d-md-block" style={{ width: "100%" }}>
             <form onSubmit={onSearch}>
-              <div className="input-group" style={{ maxWidth: 720, margin: "0 auto" }}>
-                <input
-                  className="form-control"
-                  placeholder="Search fruits, vegetables, dairy..."
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  style={{
-                    borderRadius: "999px 0 0 999px",
-                    height: 44,
-                    border: "1px solid rgba(0,0,0,0.10)",
-                    paddingLeft: 14,
-                    boxShadow: "none",
-                  }}
-                />
-                <button
-                  className="btn btn-success"
-                  type="submit"
-                  style={{
-                    borderRadius: "0 999px 999px 0",
-                    fontWeight: 850,
-                    padding: "0 16px",
-                    height: 44,
-                    minWidth: 96, // ✅ compact
-                  }}
-                >
-                  Search
-                </button>
-              </div>
-            </form>
+  <div style={{ maxWidth: 720, margin: "0 auto", position: "relative" }}>
+    
+    {/* ✅ input + button ek line me */}
+    <div style={{ display: "flex" }}>
+      
+      <input
+        className="form-control"
+        placeholder="Search fruits, vegetables, dairy..."
+        value={q}
+        onChange={handleSearchChange}
+        style={{
+          borderRadius: "999px 0 0 999px",
+          height: 44,
+          border: "1px solid rgba(0,0,0,0.10)",
+          paddingLeft: 14,
+          boxShadow: "none",
+        }}
+      />
+
+      <button
+        className="btn btn-success"
+        type="submit"
+        style={{
+          borderRadius: "0 999px 999px 0",
+          fontWeight: 850,
+          padding: "0 16px",
+          height: 44,
+          minWidth: 96,
+        }}
+      >
+        Search
+      </button>
+
+    </div>
+
+    {/* ✅ DROPDOWN — SAME DIV KE ANDAR */}
+    {showDropdown && (
+      <div
+        style={{
+          position: "absolute",
+          top: "100%",
+          left: 0,
+          width: "100%",
+          background: "#fff",
+          border: "1px solid #ddd",
+          borderRadius: 10,
+          marginTop: 5,
+          maxHeight: 220,
+          overflowY: "auto",
+          zIndex: 1000,
+          boxShadow: "0 4px 10px rgba(0,0,0,0.1)"
+        }}
+      >
+        {results.length === 0 ? (
+          <div style={{ padding: 10 }}>No results</div>
+        ) : (
+          results.map((item) => (
+            <div
+              key={item._id}
+              style={{
+                padding: 10,
+                cursor: "pointer"
+              }}
+              onClick={() => {
+                navigate(`/product/${item._id}`);
+                setShowDropdown(false);
+              }}
+            >
+              {item.name}
+            </div>
+          ))
+        )}
+      </div>
+    )}
+
+  </div>
+</form>
           </div>
 
           {/* RIGHT LINKS (desktop) */}
